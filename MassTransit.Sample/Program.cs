@@ -80,6 +80,15 @@ namespace MassTransit.Sample
                     //this number of messages will fetch at once from the queue.
                     r.PrefetchCount = 10;
 
+                    //setting ConfigureConsumeTopology to false will tell the rabbitmq not to bind its equivalent exchange to MassTransit.Sample.Contracts:UpdateAccount exchange
+                    //(normally it binds the account-service exchange to MassTransit.Sample.Contracts:UpdateAccount exchange meaning that every message that has published on it wil be sent to account-service queue too.)
+                    //so with this we must explicitly mention where we want our message to go or it will only receive command messages not an events
+                    r.ConfigureConsumeTopology = false;
+
+                    //if ConfigureConsumeTopology has set to false the bind setting can help us with binding the exchanges
+                    //for example we have bound account-service exchange and the queue as well to MassTransit.Sample.Contracts:UpdateAccount exchange explicitly 
+                    r.Bind<IUpdateAccount>();
+
                     //specify which type of commands or events we are intrested in
                     //in this case this will respond commands of type "IUpdateAccount"
                     //becuase "AccountConsumer" class is of type "IConsumer<IUpdateAccount>"
@@ -88,19 +97,7 @@ namespace MassTransit.Sample
 
                 cfg.ReceiveEndpoint("another-account-service", r =>
                 {
-                    //here we can set lots of rabbitmq configs before creating the queue
-
-                    //this option will avoid overloading memory, when we set the queue lazy option to true it wont keep all the messages in memory, it saves memory on the broker server
-                    //suitable for machines with low available memory, an optimizing tip
-                    r.Lazy = true;
-
-                    //must set to an optimal number of count that the application can process in one second.
-                    //this number of messages will fetch at once from the queue.
-                    r.PrefetchCount = 10;
-
-                    //specify which type of commands or events we are intrested in
-                    //in this case this will respond commands of type "IUpdateAccount"
-                    //becuase "AccountConsumer" class is of type "IConsumer<IUpdateAccount>"
+                    r.PrefetchCount = 20;
                     r.Consumer<AnotherAccountConsumer>();
                 });
             });
